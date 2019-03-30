@@ -2,18 +2,20 @@
 
 load(":private/set.bzl", "set")
 
-def pkg_info_to_ghc_args(pkg_info):
+def pkg_info_to_ghc_args(pkg_info, for_plugin = False):
     """
     Takes the package info collected by `ghc_info()` and returns the actual
     list of command line arguments that should be passed to GHC.
+    Last argument indicates whether the package is a plugin dependency.
     """
+    namespace = "plugin-" if for_plugin else ""
     args = [
         # In compile.bzl, we pass this just before all -package-id
         # arguments. Not doing so leads to bizarre compile-time failures.
         # It turns out that equally, not doing so leads to bizarre
         # link-time failures. See
         # https://github.com/tweag/rules_haskell/issues/395.
-        "-hide-all-packages",
+        "-hide-all-{}packages".format(namespace),
     ]
 
     if not pkg_info.has_version:
@@ -25,10 +27,10 @@ def pkg_info_to_ghc_args(pkg_info):
         ])
 
     for package in pkg_info.packages:
-        args.extend(["-package", package])
+        args.extend(["-{}package".format(namespace), package])
 
     for package_id in pkg_info.package_ids:
-        args.extend(["-package-id", package_id])
+        args.extend(["-{}package-id".format(namespace), package_id])
 
     for package_db in pkg_info.package_dbs:
         args.extend(["-package-db", package_db])
